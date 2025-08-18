@@ -81,7 +81,7 @@ const preprocessDestinationPath = ({entry, destination, options}) => {
 				return path.normalize(path.join(destination, entry.name));
 			}
 
-			return path.normalize(path.join(options.cwd, destination, entry.name));
+			return path.normalize(path.join(path.resolve(options.cwd, destination), entry.name));
 		}
 
 		// Prefer glob-parent behavior to match existing semantics,
@@ -100,18 +100,26 @@ const preprocessDestinationPath = ({entry, destination, options}) => {
 		};
 
 		const relativePath = relativize(baseA) ?? relativize(baseB) ?? path.basename(entry.path);
-		let toPath = path.normalize(path.join(destination, relativePath));
+		let toPath = path.isAbsolute(destination)
+			? path.normalize(path.join(destination, relativePath))
+			: path.normalize(path.join(path.resolve(options.cwd, destination), relativePath));
 
 		// Guard: never copy a file into itself (can truncate under concurrency).
 		if (path.resolve(toPath) === from) {
 			const alternativeRelativePath = relativize(baseB);
 
 			const alternativeToPath = alternativeRelativePath
-				? path.normalize(path.join(destination, alternativeRelativePath))
-				: path.normalize(path.join(destination, path.basename(entry.path)));
+				? (path.isAbsolute(destination)
+					? path.normalize(path.join(destination, alternativeRelativePath))
+					: path.normalize(path.join(path.resolve(options.cwd, destination), alternativeRelativePath)))
+				: (path.isAbsolute(destination)
+					? path.normalize(path.join(destination, path.basename(entry.path)))
+					: path.normalize(path.join(path.resolve(options.cwd, destination), path.basename(entry.path))));
 
 			toPath = path.resolve(alternativeToPath) === from
-				? path.normalize(path.join(destination, path.basename(entry.path)))
+				? (path.isAbsolute(destination)
+					? path.normalize(path.join(destination, path.basename(entry.path)))
+					: path.normalize(path.join(path.resolve(options.cwd, destination), path.basename(entry.path))))
 				: alternativeToPath;
 		}
 
