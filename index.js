@@ -81,6 +81,11 @@ const preprocessDestinationPath = ({entry, destination, options}) => {
 				return path.join(destination, entry.name);
 			}
 
+			// Handle relative destinations with ../ properly on Windows
+			if (destination.includes('../') || destination.includes('..\\')) {
+				return path.resolve(options.cwd, destination, entry.name);
+			}
+
 			return path.join(options.cwd, destination, entry.name);
 		}
 
