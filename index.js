@@ -29,12 +29,12 @@ class Entry {
 		/**
 		@type {string}
 		*/
-		this.path = source.split('/').join(path.sep);
+		this.path = path.normalize(source);
 
 		/**
 		@type {string}
 		*/
-		this.relativePath = relativePath.split('/').join(path.sep);
+		this.relativePath = path.normalize(relativePath);
 
 		this.pattern = pattern;
 
@@ -78,10 +78,10 @@ const preprocessDestinationPath = ({entry, destination, options}) => {
 	if (entry.pattern.hasMagic()) {
 		if (options.flat) {
 			if (path.isAbsolute(destination)) {
-				return path.join(destination, entry.name);
+				return path.normalize(path.join(destination, entry.name));
 			}
 
-			return path.join(options.cwd, destination, entry.name);
+			return path.normalize(path.join(options.cwd, destination, entry.name));
 		}
 
 		// Prefer glob-parent behavior to match existing semantics,
@@ -100,18 +100,18 @@ const preprocessDestinationPath = ({entry, destination, options}) => {
 		};
 
 		const relativePath = relativize(baseA) ?? relativize(baseB) ?? path.basename(entry.path);
-		let toPath = path.join(destination, relativePath);
+		let toPath = path.normalize(path.join(destination, relativePath));
 
 		// Guard: never copy a file into itself (can truncate under concurrency).
 		if (path.resolve(toPath) === from) {
 			const alternativeRelativePath = relativize(baseB);
 
 			const alternativeToPath = alternativeRelativePath
-				? path.join(destination, alternativeRelativePath)
-				: path.join(destination, path.basename(entry.path));
+				? path.normalize(path.join(destination, alternativeRelativePath))
+				: path.normalize(path.join(destination, path.basename(entry.path)));
 
 			toPath = path.resolve(alternativeToPath) === from
-				? path.join(destination, path.basename(entry.path))
+				? path.normalize(path.join(destination, path.basename(entry.path)))
 				: alternativeToPath;
 		}
 
@@ -119,27 +119,27 @@ const preprocessDestinationPath = ({entry, destination, options}) => {
 	}
 
 	if (path.isAbsolute(destination)) {
-		return path.join(destination, entry.name);
+		return path.normalize(path.join(destination, entry.name));
 	}
 
 	// TODO: This check will not work correctly if `options.cwd` and `entry.path` are on different partitions on Windows, see: https://github.com/sindresorhus/import-local/pull/12
 	if (entry.pattern.isDirectory && path.relative(options.cwd, entry.path).startsWith('..')) {
-		return path.join(options.cwd, destination, path.basename(entry.pattern.originalPath), path.relative(entry.pattern.originalPath, entry.path));
+		return path.normalize(path.join(options.cwd, destination, path.basename(entry.pattern.originalPath), path.relative(entry.pattern.originalPath, entry.path)));
 	}
 
 	if (!entry.pattern.isDirectory && entry.path === entry.relativePath) {
-		return path.join(options.cwd, destination, path.basename(entry.pattern.originalPath), path.relative(entry.pattern.originalPath, entry.path));
+		return path.normalize(path.join(options.cwd, destination, path.basename(entry.pattern.originalPath), path.relative(entry.pattern.originalPath, entry.path)));
 	}
 
 	if (!entry.pattern.isDirectory && options.flat) {
-		return path.join(options.cwd, destination, path.basename(entry.pattern.originalPath));
+		return path.normalize(path.join(options.cwd, destination, path.basename(entry.pattern.originalPath)));
 	}
 
 	if (!entry.pattern.isDirectory && path.relative(options.cwd, entry.path).startsWith('..')) {
-		return path.join(path.resolve(options.cwd, destination), entry.name);
+		return path.normalize(path.join(path.resolve(options.cwd, destination), entry.name));
 	}
 
-	return path.join(options.cwd, destination, path.relative(options.cwd, entry.path));
+	return path.normalize(path.join(options.cwd, destination, path.relative(options.cwd, entry.path)));
 };
 
 /**

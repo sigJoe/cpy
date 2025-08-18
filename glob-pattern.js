@@ -21,7 +21,7 @@ export default class GlobPattern {
 			&& fs.existsSync(pattern)
 			&& fs.lstatSync(pattern).isDirectory()
 		) {
-			this.path = [pattern, '**'].join('/');
+			this.path = path.posix.join(pattern, '**');
 			this.isDirectory = true;
 		}
 	}
@@ -36,10 +36,10 @@ export default class GlobPattern {
 		const normalized = segments.slice(0, magicIndex).join('/');
 
 		if (normalized) {
-			return path.isAbsolute(normalized) ? normalized : path.join(this.options.cwd, normalized);
+			return path.isAbsolute(normalized) ? path.normalize(normalized) : path.normalize(path.join(this.options.cwd, normalized));
 		}
 
-		return this.options.cwd;
+		return path.normalize(this.options.cwd);
 	}
 
 	hasMagic() {
