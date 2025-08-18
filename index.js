@@ -1,6 +1,7 @@
 import process from 'node:process';
 import EventEmitter from 'node:events';
 import path from 'node:path';
+import fs from 'node:fs';
 import os from 'node:os';
 import pMap from 'p-map';
 import {copyFile} from 'copy-file';
@@ -305,6 +306,12 @@ export default function cpy(
 					}),
 					options.rename,
 				);
+
+				// Ensure file is ready on Windows
+				try {
+					const fd = fs.openSync(entry.path, 'r');
+					fs.closeSync(fd);
+				} catch {}
 
 				try {
 					await copyFile(entry.path, to, {...options, onProgress: fileProgressHandler});
